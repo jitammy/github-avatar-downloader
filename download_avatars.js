@@ -1,14 +1,14 @@
 var request = require('request');
 var secrets = require("./secrets")
 var fs = require('fs')
-
+var owner = process.argv[2]
+var repo = process.argv[3]
 function downloadImageByURL(url, filePath) {
     request.get(url)               
     .on('error', function (err) {                                   
       throw err; 
     })
     .on('response', function (response) {                           
-        // console.log('Response Status Code: ', response.statusCode);
         response.pipe(fs.createWriteStream(
             './avatars/' +
             filePath +
@@ -16,11 +16,14 @@ function downloadImageByURL(url, filePath) {
             response.headers['content-type'].split('/')[1]
         ));  
     })
-       
   }
-
 // console.log('Welcome to the GitHub Avatar Downloader!');
 function getRepoContributors(repoOwner, repoName, cb) {
+    if (repoName === undefined||repoOwner===undefined){
+        console.log('Inputs invalid');
+        return 'Inputs invalid';
+        //if one of the values is undefined, return inputs invalid
+      }
     var options = {
         url: "https://api.github.com/repos/" + repoOwner + "/" + repoName + "/contributors",
         headers:{
@@ -38,17 +41,14 @@ function getRepoContributors(repoOwner, repoName, cb) {
             url: obj.avatar_url,
         }))
         cb(err, avatars);
-
+        return avatars
     });
   }
-
-
-getRepoContributors("jquery", "jquery", function(err, result) {
-    // console.log("Errors:", err);
-    // console.log("Result:", result);
+getRepoContributors(owner, repo, function(err, result) {
     result.map(avatar => downloadImageByURL(avatar.url, avatar.name))
 });
+// getRepoContributors(owner, repo, downloadImageByURL)
 
-
-
-// downloadImageByURL('https://avatars3.githubusercontent.com/u/192451?v=4', 1)
+// getRepoContributors("jquery", "jquery", function(err, result) {
+//     result.map(avatar => downloadImageByURL(avatar.url, avatar.name))
+// });
