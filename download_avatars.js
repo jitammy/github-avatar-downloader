@@ -2,6 +2,22 @@ var request = require('request');
 var secrets = require("./secrets")
 var fs = require('fs')
 
+function downloadImageByURL(url, filePath) {
+    request.get(url)               
+    .on('error', function (err) {                                   
+      throw err; 
+    })
+    .on('response', function (response) {                           
+        // console.log('Response Status Code: ', response.statusCode);
+        response.pipe(fs.createWriteStream(
+            './avatars/' +
+            filePath +
+            '.' + 
+            response.headers['content-type'].split('/')[1]
+        ));  
+    })
+       
+  }
 
 // console.log('Welcome to the GitHub Avatar Downloader!');
 function getRepoContributors(repoOwner, repoName, cb) {
@@ -17,24 +33,22 @@ function getRepoContributors(repoOwner, repoName, cb) {
             throw err
         }
         var data = JSON.parse(body)
-        var avatars = data.map((obj)=> obj.avatar_url)
+        var avatars = data.map((obj)=> ({
+            name: obj.login,
+            url: obj.avatar_url,
+        }))
         cb(err, avatars);
+
     });
   }
+
+
 getRepoContributors("jquery", "jquery", function(err, result) {
-    console.log("Errors:", err);
-    console.log("Result:", result);
+    // console.log("Errors:", err);
+    // console.log("Result:", result);
+    result.map(avatar => downloadImageByURL(avatar.url, avatar.name))
 });
 
-function downloadImageByURL(url, filePath) {
-   
-    request.get(url)               
-    .on('error', function (err) {                                   
-      throw err; 
-    })
-    .on('response', function (response) {                           
-      console.log('Response Status Code: ', response.statusCode);
-    })
-    .pipe(fs.createWriteStream('./avatars'+'/'+filePath));     
-  }
-downloadImageByURL('https://avatars3.githubusercontent.com/u/192451?v=4', 1)
+
+
+// downloadImageByURL('https://avatars3.githubusercontent.com/u/192451?v=4', 1)
